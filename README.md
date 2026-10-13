@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # ResearchMind
 
 **An AI-Powered Multi-Agent Research Assistant for Literature Review and Research Gap Identification**
@@ -365,3 +366,6 @@ See complete API documentation in [docs/API.md](docs/API.md).
 1. **Academic API Coverage:** arXiv Atom API and Semantic Scholar Graph API cover hundreds of millions of papers freely, but commercial paywalled databases (IEEE Xplore, Scopus) require institutional licensing.
 2. **Computational Scale on Low-End Hardware:** The built-in CPU R-GCN link predictor is optimized for interactive subgraphs (up to thousands of entities). For multi-million node citation graphs, distributed GPU training (e.g. PyG with PyTorch DDP) would be recommended.
 3. **Automated Laboratory Validation:** Hypotheses are computationally formulated and ranked with recommended validation protocols; empirical wet-lab or large-scale benchmark execution remains an external human-in-the-loop step.
+=======
+# -AAI-Powered-Multi-Agent-Research-Assistant-for-Literature-Review-and-Research-Gap-Identification
+>>>>>>> f120d7bb0fb1f76ca7a47b2a3b75b7b1883fff74
