@@ -75,3 +75,27 @@ export async function deleteSession(req, res) {
 
   res.status(204).send();
 }
+
+export async function retryResearch(req, res) {
+  const session = await ResearchSession.findById(req.params.id);
+  if (!session) return res.status(404).json({ error: "Session not found" });
+
+  // Reset steps and error message
+  session.status = "running";
+  session.errorMessage = undefined;
+  if (Array.isArray(session.steps)) {
+    session.steps = session.steps.map((s) => ({
+      step: s.step,
+      status: "pending",
+      message: "",
+    }));
+  }
+  await session.save();
+
+  runPipeline(session._id).catch((err) => {
+    logger.error(`Unhandled pipeline error on retry for session ${session._id}: ${err.message}`);
+  });
+
+  res.json({ message: "Pipeline restarted", sessionId: session._id });
+}
+

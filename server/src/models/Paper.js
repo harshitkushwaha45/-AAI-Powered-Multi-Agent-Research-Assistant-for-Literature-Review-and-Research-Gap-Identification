@@ -9,7 +9,7 @@ const paperSchema = new mongoose.Schema(
       index: true,
     },
     externalId: { type: String, required: true }, // arXiv id or Semantic Scholar paperId
-    source: { type: String, enum: ["arxiv", "semanticscholar"], required: true },
+    source: { type: String, enum: ["arxiv", "semanticscholar", "openalex", "synthetic"], required: true },
     title: { type: String, required: true },
     abstract: { type: String, default: "" },
     authors: [{ type: String }],

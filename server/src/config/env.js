@@ -28,7 +28,7 @@ function loadEnv() {
     geminiApiKey: process.env.GEMINI_API_KEY || "",
     geminiModel: process.env.GEMINI_MODEL || "gemini-flash-lite-latest",
     semanticScholarApiKey: process.env.SEMANTIC_SCHOLAR_API_KEY || "",
-    maxPapersPerSearch: Number(process.env.MAX_PAPERS_PER_SEARCH) || 40,
+    maxPapersPerSearch: Number(process.env.MAX_PAPERS_PER_SEARCH) || 20,
     neo4jUri: process.env.NEO4J_URI || "",
     neo4jUser: process.env.NEO4J_USER || "neo4j",
     neo4jPassword: process.env.NEO4J_PASSWORD || "",

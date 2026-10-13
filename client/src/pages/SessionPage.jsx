@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import { useResearchSession } from "../hooks/useResearchSession.js";
 import { useDocumentTitle } from "../hooks/useDocumentTitle.js";
-import { fetchHypotheses } from "../api/researchApi.js";
+import { fetchHypotheses, retryResearchSession } from "../api/researchApi.js";
 import PipelineProgress from "../components/PipelineProgress.jsx";
 import PaperList from "../components/PaperList.jsx";
 import LiteratureReview from "../components/LiteratureReview.jsx";
@@ -38,6 +38,7 @@ export default function SessionPage() {
   const [hypotheses, setHypotheses] = useState([]);
   const [loadingHypotheses, setLoadingHypotheses] = useState(false);
   const [isExportOpen, setIsExportOpen] = useState(false);
+  const [isRetrying, setIsRetrying] = useState(false);
 
   useDocumentTitle(session ? `${session.topic} — ResearchMind` : "ResearchMind");
 
@@ -166,8 +167,37 @@ export default function SessionPage() {
       </div>
 
       {isFailed && (
-        <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
-          Pipeline failed: {session.errorMessage}
+        <div className="rounded-xl border border-red-200 bg-red-50 p-5 text-sm text-red-700 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div>
+            <p className="font-semibold text-red-800">Pipeline encountered an issue</p>
+            <p className="mt-0.5 text-xs text-red-600">{session.errorMessage}</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={async () => {
+                try {
+                  setIsRetrying(true);
+                  await retryResearchSession(session._id);
+                  refetch();
+                } catch (e) {
+                  console.error(e);
+                } finally {
+                  setIsRetrying(false);
+                }
+              }}
+              disabled={isRetrying}
+              className="flex items-center gap-1.5 rounded-lg bg-red-600 px-3.5 py-1.5 text-xs font-semibold text-white shadow-xs hover:bg-red-700 transition disabled:opacity-50"
+            >
+              <RefreshCw className={`h-3.5 w-3.5 ${isRetrying ? "animate-spin" : ""}`} />
+              {isRetrying ? "Restarting..." : "Retry Investigation"}
+            </button>
+            <Link
+              to="/"
+              className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition"
+            >
+              New Search
+            </Link>
+          </div>
         </div>
       )}
 

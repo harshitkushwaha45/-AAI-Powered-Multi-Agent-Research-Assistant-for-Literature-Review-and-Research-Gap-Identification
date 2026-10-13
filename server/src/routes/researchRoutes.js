@@ -8,6 +8,7 @@ import {
   getSessionPapers,
   listSessions,
   deleteSession,
+  retryResearch,
 } from "../controllers/researchController.js";
 
 const router = Router();
@@ -16,6 +17,7 @@ router.post("/", createSessionLimiter, asyncHandler(startResearch));
 router.get("/", asyncHandler(listSessions));
 router.get("/:id", validateObjectIdParam("id"), asyncHandler(getSession));
 router.get("/:id/papers", validateObjectIdParam("id"), asyncHandler(getSessionPapers));
+router.post("/:id/retry", validateObjectIdParam("id"), asyncHandler(retryResearch));
 router.delete("/:id", validateObjectIdParam("id"), asyncHandler(deleteSession));
 
 export default router;

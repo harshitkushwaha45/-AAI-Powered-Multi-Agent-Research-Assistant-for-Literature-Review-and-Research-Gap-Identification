@@ -24,6 +24,11 @@ export async function fetchSessionPapers(sessionId) {
   return data;
 }
 
+export async function retryResearchSession(sessionId) {
+  const { data } = await api.post(`/research/${sessionId}/retry`);
+  return data;
+}
+
 export async function fetchRecentSessions() {
   const { data } = await api.get("/research");
   return data;

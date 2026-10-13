@@ -2,7 +2,7 @@ import axios from "axios";
 import { parseStringPromise } from "xml2js";
 import { logger } from "../utils/logger.js";
 
-const ARXIV_API_URL = "http://export.arxiv.org/api/query";
+const ARXIV_API_URL = "https://export.arxiv.org/api/query";
 
 /**
  * Searches arXiv's Atom feed API (free, keyless) and normalizes results
@@ -10,30 +10,34 @@ const ARXIV_API_URL = "http://export.arxiv.org/api/query";
  */
 export async function searchArxiv(topic, maxResults = 20) {
   try {
+    const cleanTopic = topic.trim().replace(/['"]/g, "").replace(/\s+/g, "+");
     const { data } = await axios.get(ARXIV_API_URL, {
       params: {
-        search_query: `all:${topic}`,
+        search_query: `all:${cleanTopic}`,
         start: 0,
-        max_results: maxResults,
+        max_results: Math.min(maxResults, 20),
         sortBy: "relevance",
         sortOrder: "descending",
       },
-      timeout: 15000,
+      headers: {
+        "User-Agent": "ResearchMind/1.0 (academic-research-tool; mailto:contact@researchmind.app)",
+      },
+      timeout: 10000,
     });
 
     const parsed = await parseStringPromise(data, { explicitArray: false });
-    const entries = parsed.feed.entry
+    const entries = parsed?.feed?.entry
       ? Array.isArray(parsed.feed.entry)
         ? parsed.feed.entry
         : [parsed.feed.entry]
       : [];
 
     return entries.map((entry) => {
-      const arxivId = entry.id.split("/abs/").pop();
+      const arxivId = (entry.id || "").split("/abs/").pop() || `arxiv_${Math.random().toString(36).slice(2, 9)}`;
       const authors = Array.isArray(entry.author)
-        ? entry.author.map((a) => a.name)
+        ? entry.author.map((a) => a?.name).filter(Boolean)
         : entry.author
-        ? [entry.author.name]
+        ? [entry.author.name].filter(Boolean)
         : [];
 
       return {
@@ -49,7 +53,7 @@ export async function searchArxiv(topic, maxResults = 20) {
       };
     });
   } catch (err) {
-    logger.error(`arXiv search failed: ${err.message}`);
+    logger.warn(`arXiv search skipped or timed out: ${err.message}`);
     return [];
   }
 }

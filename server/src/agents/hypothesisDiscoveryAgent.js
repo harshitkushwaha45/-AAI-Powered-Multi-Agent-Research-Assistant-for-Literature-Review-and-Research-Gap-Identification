@@ -44,7 +44,7 @@ Synthesize 3-5 structured research hypotheses adhering to this JSON format:
 {
   "hypotheses": [
     {
-      "candidateIndex": number, // 1-indexed matching Candidate ${i + 1}
+      "candidateIndex": number, // 1-indexed matching Candidate number
       "title": string,
       "statement": string, // Formal scientific hypothesis statement
       "sourceDomains": string[], // Research area(s) where the method originates

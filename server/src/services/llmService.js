@@ -14,8 +14,7 @@ const NO_THINKING = { thinkingBudget: 0 };
 const modelSupportsThinkingConfig = !env.geminiModel.includes("lite");
 
 const RETRYABLE_STATUS = new Set([429, 500, 503]);
-const MAX_ATTEMPTS = 2;
-const CALL_TIMEOUT_MS = 25000;
+const CALL_TIMEOUT_MS = 12000;
 
 async function generateWithTimeout(request, timeoutMs = CALL_TIMEOUT_MS) {
   let timer;
@@ -34,22 +33,38 @@ async function generateWithTimeout(request, timeoutMs = CALL_TIMEOUT_MS) {
   }
 }
 
+const CANDIDATE_MODELS = [
+  env.geminiModel,
+  "gemini-3.1-flash-lite",
+  "gemini-flash-latest",
+  "gemini-3.5-flash-lite",
+].filter((m, i, arr) => m && arr.indexOf(m) === i);
+
 /**
- * Executes a Gemini request with timeout protection and retry on rate-limit/overload.
+ * Executes a Gemini request with strict timeout protection and multi-model failover.
  */
 async function generateWithRetry(request) {
   let lastErr;
-  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+  for (const model of CANDIDATE_MODELS) {
+    const isLite = model.includes("lite");
+    const config = { ...request.config };
+    if (isLite) {
+      delete config.thinkingConfig;
+    } else {
+      config.thinkingConfig = NO_THINKING;
+    }
+
+    const currentReq = {
+      ...request,
+      model,
+      config,
+    };
+
     try {
-      return await generateWithTimeout(request, CALL_TIMEOUT_MS);
+      return await generateWithTimeout(currentReq, CALL_TIMEOUT_MS);
     } catch (err) {
       lastErr = err;
-      if (!RETRYABLE_STATUS.has(err.status) || attempt === MAX_ATTEMPTS) throw err;
-      const delayMs = 1500 * attempt;
-      logger.warn(
-        `Gemini call failed or timed out (${err.message}) (attempt ${attempt}/${MAX_ATTEMPTS}), retrying in ${delayMs}ms`
-      );
-      await new Promise((resolve) => setTimeout(resolve, delayMs));
+      logger.warn(`Gemini model ${model} failed/timed out (${err.message}); trying alternative model...`);
     }
   }
   throw lastErr;

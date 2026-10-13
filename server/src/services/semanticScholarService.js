@@ -16,9 +16,9 @@ export async function searchSemanticScholar(topic, maxResults = 20) {
       : undefined;
 
     const { data } = await axios.get(S2_API_URL, {
-      params: { query: topic, limit: maxResults, fields: FIELDS },
+      params: { query: topic, limit: Math.min(maxResults, 20), fields: FIELDS },
       headers,
-      timeout: 15000,
+      timeout: 6000,
     });
 
     return (data.data || []).map((paper) => ({
@@ -26,14 +26,14 @@ export async function searchSemanticScholar(topic, maxResults = 20) {
       source: "semanticscholar",
       title: paper.title || "Untitled",
       abstract: paper.abstract || "",
-      authors: (paper.authors || []).map((a) => a.name),
+      authors: (paper.authors || []).map((a) => a.name).filter(Boolean),
       year: paper.year || undefined,
       doi: paper.externalIds?.DOI || undefined,
       url: paper.url,
       citationCount: paper.citationCount || 0,
     }));
   } catch (err) {
-    logger.error(`Semantic Scholar search failed: ${err.message}`);
+    logger.warn(`Semantic Scholar search skipped (${err.message})`);
     return [];
   }
 }
