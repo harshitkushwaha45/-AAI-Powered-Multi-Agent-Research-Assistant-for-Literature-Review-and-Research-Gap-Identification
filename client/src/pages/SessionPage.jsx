@@ -9,6 +9,8 @@ import {
   FileText,
   Search,
   ExternalLink,
+  Loader2,
+  RefreshCw,
 } from "lucide-react";
 import { useResearchSession } from "../hooks/useResearchSession.js";
 import { useDocumentTitle } from "../hooks/useDocumentTitle.js";
@@ -31,7 +33,7 @@ const TABS = [
 
 export default function SessionPage() {
   const { id } = useParams();
-  const { session, papers, error } = useResearchSession(id);
+  const { session, papers, error, isReconnecting, refetch } = useResearchSession(id);
   const [activeTab, setActiveTab] = useState("Hypotheses");
   const [hypotheses, setHypotheses] = useState([]);
   const [loadingHypotheses, setLoadingHypotheses] = useState(false);
@@ -60,12 +62,41 @@ export default function SessionPage() {
     };
   }, [id, session?.status]);
 
-  if (error) {
-    return <div className="mx-auto max-w-4xl px-6 py-16 text-red-600">{error}</div>;
+  if (error && !session) {
+    return (
+      <div className="mx-auto max-w-xl px-6 py-20 text-center">
+        <div className="rounded-2xl border border-red-200 bg-red-50/70 p-8 shadow-sm">
+          <h2 className="text-lg font-bold text-red-800">Session unavailable</h2>
+          <p className="mt-2 text-sm text-red-600">{error}</p>
+          <p className="mt-1 text-xs text-slate-500">
+            If this session was recently created, the backend agents might still be running.
+          </p>
+          <div className="mt-6 flex justify-center gap-3">
+            <button
+              onClick={refetch}
+              className="flex items-center gap-1.5 rounded-lg bg-red-600 px-4 py-2 text-xs font-semibold text-white shadow-sm hover:bg-red-700 transition"
+            >
+              <RefreshCw className="h-3.5 w-3.5" /> Retry Connection
+            </button>
+            <Link
+              to="/"
+              className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition"
+            >
+              Back to Home
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   if (!session) {
-    return <div className="mx-auto max-w-4xl px-6 py-16 text-slate-500">Loading session...</div>;
+    return (
+      <div className="mx-auto flex max-w-4xl flex-col items-center justify-center px-6 py-24 text-slate-500">
+        <Loader2 className="h-8 w-8 animate-spin text-brand-600" />
+        <p className="mt-3 text-sm font-medium">Connecting to research session...</p>
+      </div>
+    );
   }
 
   const isDone = session.status === "completed";
@@ -106,6 +137,28 @@ export default function SessionPage() {
           </div>
         )}
       </div>
+
+      {/* Live Reconnecting and Active Pipeline Banners */}
+      {isReconnecting && (
+        <div className="mb-4 flex items-center justify-between rounded-xl border border-amber-200 bg-amber-50 px-4 py-2.5 text-xs text-amber-800 shadow-sm">
+          <div className="flex items-center gap-2">
+            <Loader2 className="h-4 w-4 animate-spin text-amber-600" />
+            <span>Connection slow or server busy... Pipeline is actively running in background.</span>
+          </div>
+          <button onClick={refetch} className="font-semibold underline hover:text-amber-950">
+            Refresh
+          </button>
+        </div>
+      )}
+
+      {!isDone && !isFailed && (
+        <div className="mb-5 flex items-center gap-2.5 rounded-xl border border-blue-200 bg-blue-50/70 p-3.5 text-xs text-blue-900 shadow-xs">
+          <Loader2 className="h-4 w-4 shrink-0 animate-spin text-brand-600" />
+          <span>
+            <strong>AI Agents Active:</strong> 6 specialized agents are searching arXiv/Semantic Scholar, clustering themes, extracting entities into a Temporal Citation Knowledge Graph, and discovering cross-domain hypotheses (typical duration: 60–90 seconds).
+          </span>
+        </div>
+      )}
 
       {/* Live Pipeline Progression */}
       <div className="mb-8">

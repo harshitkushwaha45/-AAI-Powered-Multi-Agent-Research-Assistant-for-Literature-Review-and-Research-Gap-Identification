@@ -45,21 +45,21 @@ export async function runPipeline(sessionId) {
 
     // Agent 1 — Paper Finder
     currentStep = "paper_finder";
-    await setStep(sessionId, currentStep, "running");
+    await setStep(sessionId, currentStep, "running", "Searching arXiv and Semantic Scholar...");
     const papers = await runPaperFinder(sessionId, topic);
     await ResearchSession.updateOne({ _id: sessionId }, { $set: { paperCount: papers.length } });
     await setStep(sessionId, currentStep, "completed", `Found ${papers.length} papers`);
 
     // Agent 2 — Classifier
     currentStep = "classifier";
-    await setStep(sessionId, currentStep, "running");
+    await setStep(sessionId, currentStep, "running", "Clustering papers into themes with Gemini...");
     const { papers: classifiedPapers, clusters } = await runClassifier(sessionId, topic, papers);
     await ResearchSession.updateOne({ _id: sessionId }, { $set: { clusters } });
     await setStep(sessionId, currentStep, "completed", `${clusters.length} clusters identified`);
 
     // Agent 3 — Knowledge Graph Builder (TCKG)
     currentStep = "graph_builder";
-    await setStep(sessionId, currentStep, "running");
+    await setStep(sessionId, currentStep, "running", "Extracting scientific entities and building graph...");
     const graphStats = await buildKnowledgeGraph(sessionId, classifiedPapers, topic);
     await ResearchSession.updateOne(
       { _id: sessionId },
@@ -79,21 +79,21 @@ export async function runPipeline(sessionId) {
 
     // Agent 4 — Literature Review
     currentStep = "literature_review";
-    await setStep(sessionId, currentStep, "running");
+    await setStep(sessionId, currentStep, "running", "Synthesizing cross-paper review...");
     const literatureReview = await runLiteratureReview(topic, classifiedPapers, clusters);
     await ResearchSession.updateOne({ _id: sessionId }, { $set: { literatureReview } });
-    await setStep(sessionId, currentStep, "completed");
+    await setStep(sessionId, currentStep, "completed", "Structured literature review generated");
 
     // Agent 5 — Gap Detector
     currentStep = "gap_detector";
-    await setStep(sessionId, currentStep, "running");
+    await setStep(sessionId, currentStep, "running", "Evaluating topic and citation sparsity...");
     const gaps = await runGapDetector(topic, classifiedPapers, clusters);
     await ResearchSession.updateOne({ _id: sessionId }, { $set: { gaps } });
     await setStep(sessionId, currentStep, "completed", `${gaps.length} candidate gaps found`);
 
     // Agent 6 — Cross-Domain Hypothesis Discovery (Graph-RAG & Link Prediction)
     currentStep = "hypothesis_discovery";
-    await setStep(sessionId, currentStep, "running");
+    await setStep(sessionId, currentStep, "running", "Scoring candidate hypotheses with Graph-RAG...");
     const hypotheses = await runHypothesisDiscovery(sessionId, topic, { cutoffYear });
     await ResearchSession.updateOne(
       { _id: sessionId },
