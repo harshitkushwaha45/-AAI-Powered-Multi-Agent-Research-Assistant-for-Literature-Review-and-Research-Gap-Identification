@@ -1,0 +1,58 @@
+# Dependencies
+node_modules/
+package-lock.json.bak
+
+# Python virtual environments & bytecode
+venv/
+.venv/
+env/
+ENV/
+__pycache__/
+*.py[cod]
+*$py.class
+*.pt
+*.pth
+
+# Environment & secrets
+.env
+.env.local
+.env.*.local
+server/.env
+client/.env
+ml_service/.env
+
+# Build outputs
+dist/
+client/dist/
+server/dist/
+build/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Test coverage
+coverage/
+.nyc_output/
+
+# OS artifacts
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Editor & IDE configs
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Local evaluation output caches (keep reproducible benchmark summary fixtures)
+server/data/evaluations/run_*.json
+ml_service/checkpoints/

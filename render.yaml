@@ -1,0 +1,25 @@
+services:
+  - type: web
+    name: researchmind-server
+    runtime: node
+    plan: free
+    rootDir: server
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: GEMINI_MODEL
+        value: gemini-flash-lite-latest
+      - key: MONGODB_URI
+        sync: false
+      - key: VECTOR_INDEX_NAME
+        value: paper_vector_index
+      - key: SEMANTIC_SCHOLAR_API_KEY
+        sync: false
+      - key: MAX_PAPERS_PER_SEARCH
+        value: "40"
+      - key: CLIENT_ORIGIN
+        value: https://research-gap-finder-eight.vercel.app

@@ -1,0 +1,77 @@
+import { ResearchSession } from "../models/ResearchSession.js";
+import { Paper } from "../models/Paper.js";
+import { GraphNode } from "../models/GraphNode.js";
+import { GraphEdge } from "../models/GraphEdge.js";
+import { Hypothesis } from "../models/Hypothesis.js";
+import { runPipeline } from "../agents/orchestrator.js";
+import { logger } from "../utils/logger.js";
+
+export async function startResearch(req, res) {
+  const { topic, cutoffYear } = req.body;
+
+  if (!topic || typeof topic !== "string" || topic.trim().length < 3) {
+    return res.status(400).json({ error: "A research topic of at least 3 characters is required." });
+  }
+  if (topic.trim().length > 200) {
+    return res.status(400).json({ error: "Research topic must be 200 characters or fewer." });
+  }
+
+  let validatedCutoff = undefined;
+  if (cutoffYear !== undefined && cutoffYear !== null) {
+    const parsed = Number(cutoffYear);
+    if (!Number.isInteger(parsed) || parsed < 1990 || parsed > 2030) {
+      return res.status(400).json({ error: "cutoffYear must be an integer between 1990 and 2030." });
+    }
+    validatedCutoff = parsed;
+  }
+
+  const session = await ResearchSession.create({
+    topic: topic.trim(),
+    historicalCutoffYear: validatedCutoff,
+  });
+
+  // Fire-and-forget: the pipeline runs in the background and updates the
+  // session document as it progresses. The client polls GET /:id for status.
+  runPipeline(session._id).catch((err) => {
+    logger.error(`Unhandled pipeline error for session ${session._id}: ${err.message}`);
+  });
+
+  res.status(201).json({ sessionId: session._id });
+}
+
+export async function getSession(req, res) {
+  const session = await ResearchSession.findById(req.params.id).lean();
+  if (!session) return res.status(404).json({ error: "Session not found" });
+  res.json(session);
+}
+
+export async function getSessionPapers(req, res) {
+  const papers = await Paper.find({ sessionId: req.params.id })
+    .sort({ citationCount: -1 })
+    .lean();
+  res.json(papers);
+}
+
+export async function listSessions(req, res) {
+  const sessions = await ResearchSession.find()
+    .select("topic status paperCount graphStats hypothesisCount historicalCutoffYear createdAt")
+    .sort({ createdAt: -1 })
+    .limit(20)
+    .lean();
+  res.json(sessions);
+}
+
+export async function deleteSession(req, res) {
+  const session = await ResearchSession.findByIdAndDelete(req.params.id);
+  if (!session) return res.status(404).json({ error: "Session not found" });
+
+  // Clean up associated papers, graph nodes, edges, and hypotheses to avoid orphaned records
+  await Promise.all([
+    Paper.deleteMany({ sessionId: req.params.id }),
+    GraphNode.deleteMany({ sessionId: req.params.id }),
+    GraphEdge.deleteMany({ sessionId: req.params.id }),
+    Hypothesis.deleteMany({ sessionId: req.params.id }),
+  ]);
+
+  res.status(204).send();
+}

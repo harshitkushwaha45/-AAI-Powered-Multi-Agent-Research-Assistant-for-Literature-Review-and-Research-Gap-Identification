@@ -1,0 +1,5 @@
+Method,MRR,Precision@5,Recall@5,Hits@1,Hits@3,Hits@5,Hits@10
+Proposed Relation-Aware + Graph-RAG,0,0,0,0,0,0,0
+Baseline 1: Semantic Similarity,0,0,0,0,0,0,0
+Baseline 2: Static Graph Topology,0,0,0,0,0,0,0
+Baseline 3: Temporal Baseline (No Graph-RAG),0,0,0,0,0,0,0
