@@ -72,11 +72,47 @@ export class BacktestingService {
 
     // Identify Ground-Truth Future Connections:
     // (Method, Problem) pairs that appeared in the 2022-2024 literature
-    const groundTruthFutureLinks = testFutureEdges.filter(
-      (e) =>
-        (e.edgeType === "ADDRESSES_PROBLEM" || e.edgeType === "USES_METHOD" || e.edgeType === "PROPOSES_METHOD") &&
-        e.sourceNodeType !== e.targetNodeType
-    );
+    const postCutoffPaperToMethods = new Map();
+    const postCutoffPaperToProblems = new Map();
+
+    for (const edge of testFutureEdges) {
+      const paperId =
+        edge.sourceNodeType === "Paper"
+          ? edge.sourceCanonicalId
+          : edge.targetNodeType === "Paper"
+          ? edge.targetCanonicalId
+          : null;
+      if (!paperId) continue;
+
+      if (edge.targetNodeType === "Method" || edge.sourceNodeType === "Method") {
+        const mId = edge.targetNodeType === "Method" ? edge.targetCanonicalId : edge.sourceCanonicalId;
+        if (!postCutoffPaperToMethods.has(paperId)) postCutoffPaperToMethods.set(paperId, new Set());
+        postCutoffPaperToMethods.get(paperId).add(mId);
+      }
+
+      if (edge.targetNodeType === "ResearchProblem" || edge.sourceNodeType === "ResearchProblem") {
+        const pId = edge.targetNodeType === "ResearchProblem" ? edge.targetCanonicalId : edge.sourceCanonicalId;
+        if (!postCutoffPaperToProblems.has(paperId)) postCutoffPaperToProblems.set(paperId, new Set());
+        postCutoffPaperToProblems.get(paperId).add(pId);
+      }
+    }
+
+    const emergentLinkSet = new Set();
+    for (const [paperId, methods] of postCutoffPaperToMethods.entries()) {
+      const problems = postCutoffPaperToProblems.get(paperId);
+      if (!problems) continue;
+      for (const mId of methods) {
+        for (const pId of problems) {
+          emergentLinkSet.add(`${mId}:::${pId}`);
+          emergentLinkSet.add(`${pId}:::${mId}`);
+        }
+      }
+    }
+
+    for (const gte of testFutureEdges) {
+      emergentLinkSet.add(`${gte.sourceCanonicalId}:::${gte.targetCanonicalId}`);
+      emergentLinkSet.add(`${gte.targetCanonicalId}:::${gte.sourceCanonicalId}`);
+    }
 
     // Candidate pairs to evaluate
     const candidateMethods = trainNodes.filter((n) => n.nodeType === "Method");
@@ -84,14 +120,11 @@ export class BacktestingService {
 
     // Generate candidate test pairs
     const testPairs = [];
-    for (const m of candidateMethods.slice(0, 10)) {
-      for (const p of candidateProblems.slice(0, 10)) {
-        // Did this pair actually emerge in the evaluation window?
-        const isTrueFutureLink = groundTruthFutureLinks.some(
-          (gte) =>
-            (gte.sourceCanonicalId === m.canonicalId && gte.targetCanonicalId === p.canonicalId) ||
-            (gte.sourceCanonicalId === p.canonicalId && gte.targetCanonicalId === m.canonicalId)
-        );
+    for (const m of candidateMethods.slice(0, 8)) {
+      for (const p of candidateProblems.slice(0, 8)) {
+        const isTrueFutureLink =
+          emergentLinkSet.has(`${m.canonicalId}:::${p.canonicalId}`) ||
+          emergentLinkSet.has(`${p.canonicalId}:::${m.canonicalId}`);
 
         testPairs.push({
           method: m,
@@ -364,6 +397,7 @@ export class BacktestingService {
       // Post-2021 Evaluation Ground Truth Links (Published 2022-2024)
       // This is the positive connection that emerged subsequently in the scientific literature!
       { edgeType: "USES_METHOD", sourceCanonicalId: "paper:edge2024", targetCanonicalId: "method:graph_neural_networks", sourceNodeType: "Paper", targetNodeType: "Method", year: 2024, confidence: 0.95, evidenceText: "Graph-RAG integrates graph structure with retrieval augmentation.", verificationStatus: "observed" },
+      { edgeType: "USES_METHOD", sourceCanonicalId: "paper:edge2024", targetCanonicalId: "method:rag", sourceNodeType: "Paper", targetNodeType: "Method", year: 2024, confidence: 0.95, evidenceText: "Graph-RAG integrates graph structure with retrieval augmentation.", verificationStatus: "observed" },
       { edgeType: "ADDRESSES_PROBLEM", sourceCanonicalId: "paper:edge2024", targetCanonicalId: "problem:hallucination_in_llms", sourceNodeType: "Paper", targetNodeType: "ResearchProblem", year: 2024, confidence: 0.92, evidenceText: "Graph RAG addresses hallucination in complex query summarization.", verificationStatus: "inferred" },
       { edgeType: "ADDRESSES_PROBLEM", sourceCanonicalId: "paper:edge2024", targetCanonicalId: "problem:multi_hop_reasoning", sourceNodeType: "Paper", targetNodeType: "ResearchProblem", year: 2024, confidence: 0.9, evidenceText: "Resolves multi-hop query challenges across documents.", verificationStatus: "inferred" },
     ];

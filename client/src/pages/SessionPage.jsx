@@ -258,7 +258,7 @@ export default function SessionPage() {
           {activeTab === "Knowledge Graph" && (
             <KnowledgeGraphExplorer
               sessionId={id}
-              defaultCutoff={session.historicalCutoffYear || 2024}
+              defaultCutoff={session.historicalCutoffYear || null}
             />
           )}
 
@@ -280,7 +280,7 @@ export default function SessionPage() {
 
           {/* TAB 4: Literature Review */}
           {activeTab === "Literature Review" && (
-            <LiteratureReview review={session.literatureReview} />
+            <LiteratureReview review={session.literatureReview} papers={papers} />
           )}
 
           {/* TAB 5: Papers */}

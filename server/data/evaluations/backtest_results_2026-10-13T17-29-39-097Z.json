@@ -1,0 +1,158 @@
+{
+  "benchmarkName": "Cross-Domain Scientific Link Prediction Benchmark",
+  "datasetVersion": "v1.1-tckg",
+  "historicalCutoffYear": 2021,
+  "evaluationWindowStart": 2022,
+  "evaluationWindowEnd": 2024,
+  "totalPapers": 19,
+  "totalEntities": 17,
+  "totalEdges": 10,
+  "testCandidatePairs": 16,
+  "verifiedFutureLinks": 4,
+  "proposedModelMetrics": {
+    "precisionAt1": 1,
+    "precisionAt3": 0.6667,
+    "precisionAt5": 0.4,
+    "precisionAt10": 0.4,
+    "recallAt5": 0.5,
+    "recallAt10": 1,
+    "mrr": 1,
+    "hitsAt1": 1,
+    "hitsAt3": 1,
+    "hitsAt5": 1,
+    "hitsAt10": 1,
+    "evidenceCoverage": 0.94,
+    "citationAccuracy": 1
+  },
+  "baselines": [
+    {
+      "name": "Baseline 1: Semantic Similarity",
+      "description": "Cosine similarity between MiniLM text embeddings of methods and problems.",
+      "metrics": {
+        "precisionAt1": 1,
+        "precisionAt3": 0.6667,
+        "precisionAt5": 0.6,
+        "precisionAt10": 0.4,
+        "recallAt5": 0.75,
+        "recallAt10": 1,
+        "mrr": 1,
+        "hitsAt1": 1,
+        "hitsAt3": 1,
+        "hitsAt5": 1,
+        "hitsAt10": 1,
+        "evidenceCoverage": 0.94,
+        "citationAccuracy": 1
+      },
+      "executionTimeMs": 42
+    },
+    {
+      "name": "Baseline 2: Static Graph Topology",
+      "description": "Common neighbors and Adamic-Adar scores on the co-occurrence graph without edge years.",
+      "metrics": {
+        "precisionAt1": 1,
+        "precisionAt3": 0.3333,
+        "precisionAt5": 0.2,
+        "precisionAt10": 0.2,
+        "recallAt5": 0.25,
+        "recallAt10": 0.5,
+        "mrr": 1,
+        "hitsAt1": 1,
+        "hitsAt3": 1,
+        "hitsAt5": 1,
+        "hitsAt10": 1,
+        "evidenceCoverage": 0.94,
+        "citationAccuracy": 1
+      },
+      "executionTimeMs": 28
+    },
+    {
+      "name": "Baseline 3: Temporal Baseline (No Graph-RAG)",
+      "description": "Edge recency weighting and velocity without multi-hop evidence grounding.",
+      "metrics": {
+        "precisionAt1": 1,
+        "precisionAt3": 0.3333,
+        "precisionAt5": 0.4,
+        "precisionAt10": 0.2,
+        "recallAt5": 0.5,
+        "recallAt10": 0.5,
+        "mrr": 1,
+        "hitsAt1": 1,
+        "hitsAt3": 1,
+        "hitsAt5": 1,
+        "hitsAt10": 1,
+        "evidenceCoverage": 0.94,
+        "citationAccuracy": 1
+      },
+      "executionTimeMs": 51
+    }
+  ],
+  "ablationStudies": [
+    {
+      "ablationName": "Remove Temporal Features (-Temporal)",
+      "variation": "Removes edge timestamps and historical velocity weighting.",
+      "metrics": {
+        "precisionAt1": 1,
+        "precisionAt3": 0.6667,
+        "precisionAt5": 0.6,
+        "precisionAt10": 0.4,
+        "recallAt5": 0.75,
+        "recallAt10": 1,
+        "mrr": 1,
+        "hitsAt1": 1,
+        "hitsAt3": 1,
+        "hitsAt5": 1,
+        "hitsAt10": 1,
+        "evidenceCoverage": 0.94,
+        "citationAccuracy": 1
+      },
+      "deltaMrr": 0
+    },
+    {
+      "ablationName": "Remove Graph Topology (-Topology)",
+      "variation": "Removes multi-hop path and neighbor features.",
+      "metrics": {
+        "precisionAt1": 1,
+        "precisionAt3": 0.6667,
+        "precisionAt5": 0.6,
+        "precisionAt10": 0.4,
+        "recallAt5": 0.75,
+        "recallAt10": 1,
+        "mrr": 1,
+        "hitsAt1": 1,
+        "hitsAt3": 1,
+        "hitsAt5": 1,
+        "hitsAt10": 1,
+        "evidenceCoverage": 0.94,
+        "citationAccuracy": 1
+      },
+      "deltaMrr": 0
+    },
+    {
+      "ablationName": "Remove Evidence Grounding (-Evidence)",
+      "variation": "Ranks purely on link probability without verified paper excerpt grounding.",
+      "metrics": {
+        "precisionAt1": 1,
+        "precisionAt3": 0.6667,
+        "precisionAt5": 0.4,
+        "precisionAt10": 0.4,
+        "recallAt5": 0.5,
+        "recallAt10": 1,
+        "mrr": 1,
+        "hitsAt1": 1,
+        "hitsAt3": 1,
+        "hitsAt5": 1,
+        "hitsAt10": 1,
+        "evidenceCoverage": 0.94,
+        "citationAccuracy": 1
+      },
+      "deltaMrr": 0
+    }
+  ],
+  "parameters": {
+    "cutoffYear": 2021,
+    "evalStartYear": 2022,
+    "evalEndYear": 2024,
+    "randomSeed": 42
+  },
+  "notes": "Strict temporal isolation confirmed: 0 post-cutoff citations or entities used during model scoring."
+}

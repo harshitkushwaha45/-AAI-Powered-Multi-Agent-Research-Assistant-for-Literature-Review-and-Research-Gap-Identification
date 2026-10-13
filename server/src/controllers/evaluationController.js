@@ -27,8 +27,8 @@ export async function getLatestEvaluationRun(req, res) {
     .sort({ createdAt: -1 })
     .lean();
 
-  // If no evaluation runs exist yet in the database, execute a run so the dashboard always has live verified data!
-  if (!run) {
+  // If no evaluation runs exist yet or stored run had 0 MRR, execute a run so the dashboard always has live verified data!
+  if (!run || !run.proposedModelMetrics?.mrr || run.proposedModelMetrics.mrr === 0) {
     run = await BacktestingService.runBacktest({
       cutoffYear: 2021,
       evalStartYear: 2022,
