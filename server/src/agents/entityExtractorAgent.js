@@ -96,8 +96,8 @@ Return JSON with exactly this structure:
 export async function extractScientificEntities(papers) {
   if (!Array.isArray(papers) || papers.length === 0) return [];
 
-  // Batch papers in chunks of 8 to avoid model token budget truncation
-  const CHUNK_SIZE = 8;
+  // Batch papers in chunks of 12 to minimize round-trips while staying well within token budget
+  const CHUNK_SIZE = 12;
   const allExtractions = [];
 
   for (let i = 0; i < papers.length; i += CHUNK_SIZE) {

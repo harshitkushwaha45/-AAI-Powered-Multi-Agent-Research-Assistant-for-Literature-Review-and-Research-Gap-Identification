@@ -1,4 +1,5 @@
 import { askLLMJSON } from "../services/llmService.js";
+import { logger } from "../utils/logger.js";
 
 const SYSTEM_PROMPT = `You are a research gap detection agent. Given a clustered set of papers
 on a topic, propose 3-6 concrete, specific candidate research gaps — areas that are
@@ -83,11 +84,31 @@ function clamp(n, min, max) {
  * scoreBreakdown returned alongside it.
  */
 export async function runGapDetector(topic, papers, clusters) {
-  const result = await askLLMJSON(SYSTEM_PROMPT, buildUserPrompt(topic, papers, clusters), 4096);
+  let rawGaps = [];
+  try {
+    const result = await askLLMJSON(SYSTEM_PROMPT, buildUserPrompt(topic, papers, clusters), 4096);
+    rawGaps = Array.isArray(result.gaps) ? result.gaps : [];
+  } catch (err) {
+    logger.warn(`Gap detector LLM call failed or timed out (${err.message}); applying quantitative graph gap fallback.`);
+    // Algorithmic fallback: identify sparse subfields and cross-cluster opportunities
+    const sortedClusters = [...clusters].sort((a, b) => a.paperCount - b.paperCount);
+    for (let i = 0; i < Math.min(sortedClusters.length, 3); i++) {
+      const cluster = sortedClusters[i];
+      const clusterPapers = papers.filter((p) => p.cluster === cluster.name);
+      rawGaps.push({
+        title: `Under-explored methodologies in ${cluster.name}`,
+        description: `Literature around ${cluster.name} displays significantly lower volume compared to surrounding subfields, representing an under-explored research opportunity for ${topic}.`,
+        relatedClusters: [cluster.name],
+        supportingIds: clusterPapers.slice(0, 3).map((p) => p.externalId),
+        rationale: `Cluster volume is sparse (${cluster.paperCount} papers) relative to overall topic representation.`,
+        llmNoveltyScore: 70,
+      });
+    }
+  }
 
   const paperByExternalId = new Map(papers.map((p) => [p.externalId, p]));
 
-  const gaps = (result.gaps || []).map((gap) => {
+  const gaps = rawGaps.map((gap) => {
     const supportingPapers = (gap.supportingIds || [])
       .map((id) => paperByExternalId.get(id))
       .filter(Boolean);

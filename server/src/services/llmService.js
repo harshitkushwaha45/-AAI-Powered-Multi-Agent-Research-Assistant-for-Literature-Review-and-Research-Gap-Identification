@@ -14,24 +14,40 @@ const NO_THINKING = { thinkingBudget: 0 };
 const modelSupportsThinkingConfig = !env.geminiModel.includes("lite");
 
 const RETRYABLE_STATUS = new Set([429, 500, 503]);
-const MAX_ATTEMPTS = 3;
+const MAX_ATTEMPTS = 2;
+const CALL_TIMEOUT_MS = 25000;
+
+async function generateWithTimeout(request, timeoutMs = CALL_TIMEOUT_MS) {
+  let timer;
+  const timeoutPromise = new Promise((_, reject) => {
+    timer = setTimeout(() => {
+      const err = new Error(`Gemini API call timed out after ${timeoutMs}ms`);
+      err.status = 503;
+      reject(err);
+    }, timeoutMs);
+  });
+
+  try {
+    return await Promise.race([client.models.generateContent(request), timeoutPromise]);
+  } finally {
+    clearTimeout(timer);
+  }
+}
 
 /**
- * The free Gemini tier occasionally returns transient 429 (rate limited) or 503
- * ("model overloaded, try again later") errors under normal load. Retrying a couple of
- * times with backoff clears most of these without surfacing a failure to the user.
+ * Executes a Gemini request with timeout protection and retry on rate-limit/overload.
  */
 async function generateWithRetry(request) {
   let lastErr;
   for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
     try {
-      return await client.models.generateContent(request);
+      return await generateWithTimeout(request, CALL_TIMEOUT_MS);
     } catch (err) {
       lastErr = err;
       if (!RETRYABLE_STATUS.has(err.status) || attempt === MAX_ATTEMPTS) throw err;
-      const delayMs = 1000 * 3 ** (attempt - 1); // 1s, 3s
+      const delayMs = 1500 * attempt;
       logger.warn(
-        `Gemini call failed with status ${err.status} (attempt ${attempt}/${MAX_ATTEMPTS}), retrying in ${delayMs}ms: ${err.message}`
+        `Gemini call failed or timed out (${err.message}) (attempt ${attempt}/${MAX_ATTEMPTS}), retrying in ${delayMs}ms`
       );
       await new Promise((resolve) => setTimeout(resolve, delayMs));
     }
