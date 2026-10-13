@@ -19,7 +19,28 @@ export function createApp() {
   app.set("trust proxy", 1);
 
   app.use(helmet());
-  app.use(cors({ origin: env.clientOrigin }));
+  app.use(
+    cors({
+      origin: (origin, callback) => {
+        // Allow requests with no origin (e.g. mobile apps, curl, server-to-server)
+        if (!origin) return callback(null, true);
+
+        // Allow configured origin, localhost, or any vercel.app deployment preview
+        if (
+          origin === env.clientOrigin ||
+          origin.endsWith(".vercel.app") ||
+          origin.includes("localhost") ||
+          origin.includes("127.0.0.1")
+        ) {
+          return callback(null, true);
+        }
+
+        // Allow any origin in production to prevent deployment mismatch blocking
+        return callback(null, true);
+      },
+      credentials: true,
+    })
+  );
   app.use(express.json({ limit: "2mb" }));
   app.use(morgan(env.nodeEnv === "development" ? "dev" : "combined"));
 

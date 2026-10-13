@@ -1,9 +1,10 @@
 import axios from "axios";
 
 // In local development, the Vite dev server proxies "/api" directly to the backend at http://localhost:5000.
-// In production (e.g. frontend on Vercel, backend on Render), set VITE_API_BASE_URL at build time to
-// the backend's API endpoint, e.g. https://researchmind-server.onrender.com/api
-const baseURL = import.meta.env.VITE_API_BASE_URL || "/api";
+// In production (e.g. frontend on Vercel, backend on Render), set VITE_API_BASE_URL to
+// the backend's API endpoint, e.g. https://aai-powered-multi-agent-researsh.onrender.com/api
+const rawBase = (import.meta.env.VITE_API_BASE_URL || "/api").trim().replace(/\/+$/, "");
+const baseURL = rawBase === "/api" || rawBase.endsWith("/api") ? rawBase : `${rawBase}/api`;
 const api = axios.create({ baseURL });
 
 export async function createResearchSession(topic, cutoffYear) {
