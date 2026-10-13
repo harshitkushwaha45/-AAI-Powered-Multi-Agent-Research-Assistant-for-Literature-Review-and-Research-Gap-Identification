@@ -44,6 +44,15 @@ export function createApp() {
   app.use(express.json({ limit: "2mb" }));
   app.use(morgan(env.nodeEnv === "development" ? "dev" : "combined"));
 
+  app.get("/", (req, res) =>
+    res.json({
+      service: "ResearchMind API",
+      status: "online",
+      version: "1.0.0",
+      health: "/api/health",
+      endpoints: ["/api/research", "/api/graph", "/api/hypotheses", "/api/evaluations"],
+    })
+  );
   app.get("/api/health", (req, res) => res.json({ status: "ok" }));
   app.use("/api/research", apiLimiter, researchRoutes);
   app.use("/api/graph", apiLimiter, graphRoutes);

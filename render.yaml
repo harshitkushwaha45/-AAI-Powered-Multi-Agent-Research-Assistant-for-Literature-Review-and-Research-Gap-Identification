@@ -23,3 +23,5 @@ services:
         value: "40"
       - key: CLIENT_ORIGIN
         value: https://research-gap-finder-eight.vercel.app
+      - key: ML_SERVICE_URL
+        value: https://aai-powered-multi-agent-research-9rd0.onrender.com
